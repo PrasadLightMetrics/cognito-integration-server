@@ -3,6 +3,18 @@ import { request200 } from "../request";
 import { errorFirst as eF } from "../utils";
 import { sign } from "jsonwebtoken";
 
+
+
+const extractCustomAttributes = (userDetails) => {  
+  userDetails = userDetails.body
+  const userMetadata = userDetails['custom:Location']
+  return {
+    userMetadata,
+    loginName: userDetails.email,
+  };
+};
+
+
 export const verifyAuthentication = async (req, res, next) => {
   const { code } = req.body;
   // STEP1: Exchange auth code for access token
@@ -21,15 +33,15 @@ export const verifyAuthentication = async (req, res, next) => {
   const [errorUserDetails, userDetails] = await eF(
     request200(userDetailsOptions, req, res)
   );
-  console.log("userDetails", userDetails);
   // STEP3: Extract response object from userDetails
-  //   const [respObjError, { userMetadata, ...jwtPayload }] = await eF(constructRespObject({userDetails}));
-
+    const {userMetadata, loginName} = extractCustomAttributes(userDetails);
   const date = Date.now();
   const jwt = sign(
     {
       local: {
         userDetails,
+        userMetadata,
+        loginName,
         date,
       },
     },
